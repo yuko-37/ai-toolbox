@@ -3,29 +3,24 @@ import json
 from openai import OpenAI
 from agents import AsyncOpenAI
 from graphs import CoachGraph
+from dotenv import load_dotenv
 
 
 load_dotenv()
-load_settings()
-self.css = load_css()
-self.coach_graph = CoachGraph()
 
-
+coach_graph = CoachGraph()
 openai = OpenAI()
 
 ollama = OpenAI(api_key='ollama', base_url="http://localhost:11434/v1")
-
 ollama_async_client = AsyncOpenAI(
     base_url="http://localhost:11434/v1",
     api_key="ollama",
 )
 
-
 models_file = os.path.join(os.path.dirname(__file__), 'models.json')
 
 with open(models_file, 'r') as f:
     MODELS = json.load(f)
-
 
 COACH_MODELS = {**MODELS, 'no coach': ['none']}
 EVAL_MODELS = {**MODELS, 'no eval': ['none']}

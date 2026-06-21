@@ -1,16 +1,16 @@
 import gradio as gr
 
-from state import usage
+from state import usage, coach_graph
 from myagents.evaluator_agent import evaluator_agent, EvaluationResult
 # from myagents.coach_agent import coach_agent
 from myagents.coach_manager import coach_manager
 from agents import Runner, trace, gen_trace_id
 from openai.types.responses import ResponseTextDeltaEvent, ResponseCompletedEvent
-from app import app
+
 
 
 async def ask_graph(model, message, history):
-    state = app.coach_graph.invoke(message, model, "3")
+    state = coach_graph.invoke(message, model, "3")
     resp = state.content
 
     tokens = {
