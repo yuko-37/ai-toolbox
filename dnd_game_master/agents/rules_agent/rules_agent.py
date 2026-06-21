@@ -79,7 +79,7 @@ then provide a clear, concise answer with the page reference. Keep responses bri
 """
 
 # model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
-model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=500)
+model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
 
 agent = Agent(
     # TODO: Configure the agent with:
