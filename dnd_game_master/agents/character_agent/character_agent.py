@@ -1,5 +1,6 @@
 import os
 import uuid
+
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from typing import List, Dict
@@ -8,6 +9,10 @@ from strands.multiagent.a2a import A2AServer
 from tinydb import TinyDB, Query
 from strands.models.ollama import OllamaModel
 from strands.models.anthropic import AnthropicModel
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 @dataclass
