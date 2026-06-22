@@ -61,6 +61,7 @@ SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to special
 Available agents:
 - Rules Agent, for D&D mechanics and rules
 - Character Agent, for character creation and management
+- Image Agent, for generating character portraits ans location scenes
 
 To communicate with agents:
 1. Use a2a_list_discovered_agents to see available agents

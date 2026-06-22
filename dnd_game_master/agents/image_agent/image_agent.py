@@ -40,7 +40,7 @@ def generate_scene_image(description: str, image_filename: str,
     img = Image.open(BytesIO(image_data))
     url = f"/Users/yuko/MyFiles/dnd-images/{image_filename}.png"
     img.save(url)
-    return urls
+    return url
 
 DESCRIPTION="""
 An image generation agent. Generates image and provides url to the generated content.
@@ -64,7 +64,9 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT
 )
 
-a2a_server = A2AServer(agent=agent, port=8002)
+a2a_server = A2AServer(agent=agent,
+                       port=8002,
+                       enable_a2a_compliant_streaming=True)
 
 
 if __name__ == "__main__":
