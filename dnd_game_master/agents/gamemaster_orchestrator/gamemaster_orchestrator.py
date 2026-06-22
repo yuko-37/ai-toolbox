@@ -95,7 +95,11 @@ class StoryOutput(BaseModel):
 
 try:
     # TODO: Create the A2A client with the A2AClientToolProvider and pass the list of the known agent urls
-    A2A_AGENT_URLS = ["http://localhost:8000", "http://localhost:8001"]
+    A2A_AGENT_URLS = [
+        "http://localhost:8000",
+        "http://localhost:8001",
+        "http://localhost:8002",
+    ]
     a2a_client = A2AClientToolProvider(known_agent_urls=A2A_AGENT_URLS)
     # model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
     model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
