@@ -28,4 +28,5 @@ dependencies = [
     "anthropic>=0.111.0",
     "openai>=2.43.0",
     "jupyterlab>=4.6.0",
+    "a2a-sdk[http-server]>=0.3.26",
 ]
