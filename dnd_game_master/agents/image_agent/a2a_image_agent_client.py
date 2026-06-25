@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from strands.agent.a2a_agent import A2AAgent
 
@@ -19,4 +20,16 @@ Amber-polished lute ready for performance
 Confident, charismatic stance
 """
 
-result = a2a_agent(message)
+def send_image_request():
+    result = a2a_agent(message)
+    return result
+
+async def go():
+    card = await a2a_agent.get_agent_card()
+    print(card)
+
+# asyncio.run(go())
+
+resp = send_image_request()
+print(f"[{resp}]")
+print(type(resp))
