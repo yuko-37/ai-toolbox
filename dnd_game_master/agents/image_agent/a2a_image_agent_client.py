@@ -24,12 +24,11 @@ def send_image_request():
     result = a2a_agent(message)
     return result
 
-async def go():
+async def get_agent_card():
     card = await a2a_agent.get_agent_card()
     print(card)
 
-# asyncio.run(go())
+# asyncio.run(get_agent_card())
 
 resp = send_image_request()
 print(f"[{resp}]")
-print(type(resp))
