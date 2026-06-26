@@ -8,10 +8,12 @@ from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
 from image_agent_exectutor import ImageAgentExecutor
+from logging_config import setup_logging
 
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 load_dotenv()
+setup_logging()
+logger = logging.getLogger("ImageA2AServer")
 
 
 HOST = os.getenv('AGENTS_HOST')
@@ -72,4 +74,5 @@ def main():
 
 
 if __name__ == '__main__':
+    logger.info('Starting Image A2A Server...')
     main()

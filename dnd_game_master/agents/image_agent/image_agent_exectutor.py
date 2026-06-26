@@ -10,7 +10,7 @@ class ImageAgentExecutor(AgentExecutor):
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         prompt = context.get_user_input()
-        response = self.agent.generate_image(prompt)
+        response = self.agent.process_request(prompt)
         message = new_agent_text_message(response)
         await event_queue.enqueue_event(message)
 
