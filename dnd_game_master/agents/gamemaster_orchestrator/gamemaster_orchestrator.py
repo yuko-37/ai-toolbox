@@ -1,6 +1,8 @@
 import os
 import sys
 import uvicorn
+import logging
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +11,7 @@ from typing import List
 from tinydb import TinyDB, Query
 from strands import Agent
 from strands.tools.mcp.mcp_client import MCPClient
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 from strands_tools.a2a_client import A2AClientToolProvider
 from strands.models.ollama import OllamaModel
 from strands.models.anthropic import AnthropicModel
@@ -17,6 +19,11 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
+
+
+logger = logging.getLogger('GameMaster Orchestrator')
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, format=os.getenv('LOG_FORMAT'))
+
 
 app = FastAPI(title="D&D Game Master API")
 origins = ["*"]
@@ -48,12 +55,11 @@ def get_user(user_name):
         return f":x: Character with name '{user_name}' not found"
     
     character = result[0]
-    print(f"✅ Found character: {character['name']} (ID: {character['character_id']}, {character['character_class']} {character['race']})")
+    logger.info(f"✅ Found character: {character['name']} (ID: {character['character_id']}, {character['character_class']} {character['race']})")
     return character
 
-# TODO: Create MCP Client for dice rolling service
-# Initialize MCPClient with a lambda that returns streamablehttp_client("http://localhost:8080/mcp")
-mcp_client = MCPClient(lambda: streamablehttp_client("http://localhost:8080/mcp"))
+
+mcp_client = MCPClient(lambda: streamable_http_client("http://localhost:8080/mcp"))
 
 # System prompt for the agent
 SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to specialized agents and tools.
@@ -95,7 +101,6 @@ class StoryOutput(BaseModel):
     dice_rolls: List[DiceOutput] = Field(default=[], description="List of dice rolls with dice_type, result, and reason")
 
 try:
-    # TODO: Create the A2A client with the A2AClientToolProvider and pass the list of the known agent urls
     A2A_AGENT_URLS = [
         "http://localhost:8000",
         "http://localhost:8001",
@@ -108,10 +113,10 @@ try:
     agent = Agent(
         model=model,
         system_prompt=SYSTEM_PROMPT,
-        tools = [mcp_client] + a2a_client.tools,
+        tools = [mcp_client],
+        # tools = [mcp_client] + a2a_client.tools,
         structured_output_model = StoryOutput,
-        #TODO: Create the gamemaster agent with both A2A and MCP tools
-        #TODO: Force the response to use the StoryOutput model
+
     )
 except Exception as e:
     print(f"Error occurred: {str(e)}")
