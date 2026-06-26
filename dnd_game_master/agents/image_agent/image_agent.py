@@ -20,8 +20,8 @@ class ImageAgent:
     @staticmethod
     def generate_image_name(prompt: str) -> str:
         filename = ''
-        message = (f"Based on the following description, generate a unique short filename.\nDescription:{prompt}.\ "
-                   f"Return created filename in JSON format. \
+        message = (f"Based on the following description, generate a unique short filename.\nDescription:{prompt}. \
+                    Return created filename in JSON format. \
                    Examples: MysticHalfElf, Elvish Performer, Elven_Bard_Character_Portrait")
         messages = [{'role': 'user', 'content': message}]
         try:
