@@ -1,13 +1,19 @@
 import os
 import chromadb
+
 from strands import Agent, tool
 from strands.multiagent.a2a import A2AServer
 from dotenv import load_dotenv
 from strands.models.ollama import OllamaModel
 from strands.models.anthropic import AnthropicModel
+from logging_config import setup_logging, LOGGER_NAME
+from logging import getLogger
 
 
 load_dotenv()
+setup_logging()
+logger = getLogger("RulesA2AServer")
+
 
 class RulesKnowledgeBase:
     """Fast knowledge base interface"""
@@ -78,14 +84,15 @@ You are a D&D rules expert. When asked about rules, use the query_dnd_rules tool
 then provide a clear, concise answer with the page reference. Keep responses brief and focused on the specific rule requested.
 """
 
-# model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
-model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
+if os.getenv('RULES_AGENT_MODEL', '') == 'LLAMA':
+    model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
+else:
+    model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
+
+logger.info(f'Set Rules model to {type(model)}')
+
 
 agent = Agent(
-    # TODO: Configure the agent with:
-    # - model: Optional
-    # - tools: List containing the query_dnd_rules tool
-    # - name: "Rules Agent"
     model=model,
     tools = [query_dnd_rules],
     name = "Rules Agent",
@@ -93,11 +100,10 @@ agent = Agent(
     system_prompt= SYSTEM_PROMPT
 )
 
-# TODO: Create an A2AServer instance with:
-# - agent: The agent instance created above
-# - port: 8000 (Rules Agent port)
+
 a2a_server = A2AServer(agent=agent, port=8000)
 
+
 if __name__ == "__main__":
-    # TODO: Start the A2A server
+    logger.info('Starting Rules A2A Server...')
     a2a_server.serve()
