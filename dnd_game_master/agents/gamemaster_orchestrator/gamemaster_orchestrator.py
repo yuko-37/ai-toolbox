@@ -63,9 +63,6 @@ def get_user(user_name):
     return character
 
 
-mcp_client = MCPClient(lambda: streamable_http_client("http://localhost:8080/mcp"))
-
-# System prompt for the agent
 SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to specialized agents and tools.
 
 Available agents:
@@ -92,6 +89,7 @@ IMPORTANT: Always use the exact URLs shown by a2a_list_discovered_agents. Never 
 Be creative, engaging, and use your available tools to enhance the D&D experience.
 """
 
+
 class DiceOutput(BaseModel):
     dice_type: str = Field(description="The dice type. Ex: d4, d6, d20, etc")
     result: int = Field(description="The dice result value alone")
@@ -110,6 +108,7 @@ try:
         "http://localhost:8001",
         "http://localhost:8002",
     ]
+    mcp_client = MCPClient(lambda: streamable_http_client("http://localhost:8080/mcp"))
     a2a_client = A2AClientToolProvider(known_agent_urls=A2A_AGENT_URLS)
 
     if os.getenv('GAME_MASTER_MODEL') == 'LLAMA':
@@ -133,14 +132,14 @@ except Exception as e:
 
 @app.post("/inquire")
 async def ask_agent(request: QuestionRequest):
-    print("Processing request...")
+    logger.info("Processing request...")
     try:
         response = await agent.invoke_async(request.question)
-        print(response.structured_output)
+        logger.info(response.structured_output)
         return JSONResponse(content={ "response": response.structured_output.model_dump()})
         
     except Exception as e:
-        print(f"Error occurred: {str(e)}")
+        logger.error(f"Error occurred: {str(e)}")
         return JSONResponse(content={"error": "Internal server error"}, status_code=500)
 
 if __name__ == "__main__":
