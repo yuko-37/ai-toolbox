@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 
 from datetime import datetime
 from dataclasses import dataclass, asdict
@@ -10,9 +11,12 @@ from tinydb import TinyDB, Query
 from strands.models.ollama import OllamaModel
 from strands.models.anthropic import AnthropicModel
 from dotenv import load_dotenv
+from logging_config import setup_logging
 
 
 load_dotenv()
+setup_logging()
+logger = logging.getLogger('CharacterA2AServer')
 
 
 @dataclass
@@ -158,14 +162,14 @@ Use the appropriate tools to create, find, or list characters as requested. Prov
 helpful summaries when characters are found. Keep responses focused and include relevant character details like class, race, and key stats."
 """
 
-# model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
-model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
+if os.getenv('CHARACTER_AGENT_MODEL', '') == 'LLAMA':
+    model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
+else:
+    model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
+
+logger.info(f'Set Character model to {type(model)}')
 
 agent = Agent(
-    # TODO: Configure the Character Agent with:
-    # - model: optional
-    # - tools: List the tools
-    # - name: "Character Creator Agent"
     model=model,
     tools = [find_character_by_name, list_all_characters, create_character],
     name = "Character Creator Agent",
@@ -173,68 +177,10 @@ agent = Agent(
     system_prompt= SYSTEM_PROMPT
 )
 
-# TODO: Create an A2AServer instance with:
-# - agent: The agent instance created above
-# - port: 8001 (Character Agent port)
+
 a2a_server = A2AServer(agent=agent, port=8001)
 
 
-
-
-# @tool
-def generate_scene_image(description: str, style: str = "fantasy art") -> str:
-    """
-    Generate an image to visualize the current scene or character.
-
-    Args:
-        description: Detailed description of what to visualize
-        style: Art style (fantasy art, medieval, dark fantasy, etc.)
-
-    Returns:
-        URL or path to the generated image
-    """
-
-
-# @tool
-def generate_location(location_type: str, context: str) -> dict:
-    """
-    Dynamically generate new locations based on story needs.
-
-    Args:
-        location_type: Type of location (dungeon, city, wilderness, etc.)
-        context: Current story context and player level
-
-    Returns:
-        Detailed location with NPCs, encounters, and secrets
-    """
-    # Generate appropriate challenges for party level
-    # Create interconnected locations with logical geography
-    # Populate with relevant NPCs and plot hooks
-
-# @tool
-def track_world_changes(location: str, change: str, impact: str) -> dict:
-    """Track how player actions permanently change the world."""
-    # Record consequences of player decisions
-    # Update NPC reactions and world state
-    # Create ripple effects from major actions
-
-# @tool
-def manage_spell_slots(character: str, spell_level: int, action: str) -> dict:
-    """Track spell slot usage and magical abilities."""
-    # Monitor spell slot consumption and recovery
-    # Handle complex spellcasting mechanics
-    # Track magical item charges and abilities
-
-# @tool
-def calculate_experience(encounter_difficulty: str, party_size: int) -> dict:
-    """Calculate and distribute experience points fairly."""
-    # Determine appropriate XP rewards
-    # Handle level progression and milestone advancement
-    # Balance encounters for party composition
-
-
-
-
 if __name__ == "__main__":
-    # TODO: Start the A2A server
+    logger.info('Starting Character A2A Server...')
     a2a_server.serve()
