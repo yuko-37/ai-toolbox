@@ -1,5 +1,7 @@
 import os
 import sys
+from logging import StreamHandler, Formatter
+
 import uvicorn
 import logging
 
@@ -20,9 +22,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 logger = logging.getLogger('GameMaster Orchestrator')
-logging.basicConfig(level=logging.INFO, stream=sys.stdout, format=os.getenv('LOG_FORMAT'))
+logger.setLevel(logging.INFO)
+handler = StreamHandler(stream=sys.stdout)
+handler.setFormatter(Formatter(os.getenv('LOG_FORMAT')))
+logger.addHandler(handler)
 
 
 app = FastAPI(title="D&D Game Master API")
@@ -107,8 +111,14 @@ try:
         "http://localhost:8002",
     ]
     a2a_client = A2AClientToolProvider(known_agent_urls=A2A_AGENT_URLS)
-    # model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
-    model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
+
+    if os.getenv('GAME_MASTER_MODEL') == 'LLAMA':
+        model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
+    else:
+        model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
+
+    logger.info(f'Set Game Master model to {type(model)}')
+
 
     agent = Agent(
         model=model,
@@ -119,7 +129,7 @@ try:
 
     )
 except Exception as e:
-    print(f"Error occurred: {str(e)}")
+    logger.error(f"Error occurred: {str(e)}")
 
 @app.post("/inquire")
 async def ask_agent(request: QuestionRequest):
