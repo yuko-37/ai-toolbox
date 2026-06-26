@@ -1,36 +1,24 @@
-import os
-import sys
-from logging import StreamHandler, Formatter
-
 import uvicorn
-import logging
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel
 from tinydb import TinyDB, Query
-from strands import Agent
-from strands.tools.mcp.mcp_client import MCPClient
-from mcp.client.streamable_http import streamable_http_client
-from strands_tools.a2a_client import A2AClientToolProvider
-from strands.models.ollama import OllamaModel
-from strands.models.anthropic import AnthropicModel
 from dotenv import load_dotenv
+from logging_config import setup_logging
+from logging import getLogger, INFO
+from gamemaster_agent import get_gamemaster_agent
 
 
 load_dotenv()
+setup_logging()
+logger = getLogger('GameMasterOrchestrator')
+logger.setLevel(INFO)
 
-logger = logging.getLogger('GameMaster Orchestrator')
-logger.setLevel(logging.INFO)
-handler = StreamHandler(stream=sys.stdout)
-handler.setFormatter(Formatter(os.getenv('LOG_FORMAT')))
-logger.addHandler(handler)
-
-
+agent = get_gamemaster_agent()
 app = FastAPI(title="D&D Game Master API")
-origins = ["*"]
+origins = ["https://aws-samples.github.io"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -42,13 +30,16 @@ app.add_middleware(
 class QuestionRequest(BaseModel):
     question: str
 
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
 
+
 @app.get("/messages")
 def get_messages():
     return agent.messages
+
 
 @app.get("/user/{user_name}")
 def get_user(user_name):
@@ -63,73 +54,6 @@ def get_user(user_name):
     return character
 
 
-SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to specialized agents and tools.
-
-Available agents:
-- Rules Agent, for D&D mechanics and rules
-- Character Agent, for character creation and management
-- Image Agent, for generating character portraits ans location scenes
-
-To communicate with agents:
-1. Use a2a_list_discovered_agents to see available agents
-2. Use a2a_send_message with the agent's URL to send questions
-3. Use roll_dice for dice rolling
-
-Available D&D dice types:
-- d4 (4-sided die) - Used for damage rolls of small weapons like daggers
-- d6 (6-sided die) - Used for damage rolls of weapons like shortswords, spell damage
-- d8 (8-sided die) - Used for damage rolls of weapons like longswords, rapiers
-- d10 (10-sided die) - Used for damage rolls of heavy weapons, percentile rolls
-- d12 (12-sided die) - Used for damage rolls of great weapons like greataxes
-- d20 (20-sided die) - Used for ability checks, attack rolls, saving throws
-- d100 (percentile die) - Used for random tables, wild magic surges
-
-IMPORTANT: Always use the exact URLs shown by a2a_list_discovered_agents. Never invent or guess URLs.
-
-Be creative, engaging, and use your available tools to enhance the D&D experience.
-"""
-
-
-class DiceOutput(BaseModel):
-    dice_type: str = Field(description="The dice type. Ex: d4, d6, d20, etc")
-    result: int = Field(description="The dice result value alone")
-    reason: str = Field(description="The reason the dice was rolled. Ex: attack roll. And the modificators if there was any")
-
-class StoryOutput(BaseModel):
-    """Model that contains information about a Person"""
-    response: str = Field(description="Your narative response as Game Master")
-    actions_suggestions: list[str] = Field(description="['Action 1', 'Action 2', 'Action 3']")
-    destails: str = Field(description="Brief summary of tools/agents used")
-    dice_rolls: List[DiceOutput] = Field(default=[], description="List of dice rolls with dice_type, result, and reason")
-
-try:
-    A2A_AGENT_URLS = [
-        "http://localhost:8000",
-        "http://localhost:8001",
-        "http://localhost:8002",
-    ]
-    mcp_client = MCPClient(lambda: streamable_http_client("http://localhost:8080/mcp"))
-    a2a_client = A2AClientToolProvider(known_agent_urls=A2A_AGENT_URLS)
-
-    if os.getenv('GAME_MASTER_MODEL') == 'LLAMA':
-        model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
-    else:
-        model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
-
-    logger.info(f'Set Game Master model to {type(model)}')
-
-
-    agent = Agent(
-        model=model,
-        system_prompt=SYSTEM_PROMPT,
-        tools = [mcp_client],
-        # tools = [mcp_client] + a2a_client.tools,
-        structured_output_model = StoryOutput,
-
-    )
-except Exception as e:
-    logger.error(f"Error occurred: {str(e)}")
-
 @app.post("/inquire")
 async def ask_agent(request: QuestionRequest):
     logger.info("Processing request...")
@@ -142,5 +66,7 @@ async def ask_agent(request: QuestionRequest):
         logger.error(f"Error occurred: {str(e)}")
         return JSONResponse(content={"error": "Internal server error"}, status_code=500)
 
+
 if __name__ == "__main__":
+    logger.info("Starting GameMasterOrchestrator...")
     uvicorn.run(app, port=8009)
