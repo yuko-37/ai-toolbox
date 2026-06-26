@@ -1,6 +1,5 @@
 import logging.config
 
-LOGGER_NAME = "Character A2A Server"
 
 LOGGING_CONFIG = {
     "version": 1,
