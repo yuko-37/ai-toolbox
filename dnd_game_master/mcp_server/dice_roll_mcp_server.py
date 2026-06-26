@@ -1,17 +1,17 @@
-# TODO: Import FastMCP from mcp.server
+import random
+import logging
+import os
+import sys
+
 from mcp.server import FastMCP
 from dotenv import load_dotenv
 
-import random
-import logging
-
 
 load_dotenv()
+logger = logging.getLogger('Dice Roll MCP Server')
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, format=os.getenv('LOG_FORMAT'))
 
-# Configure logging to show dice roll results
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# TODO: Create an MCP server with name "D&D Dice Roll Service" on port 8080
 mcp = FastMCP(
     name="D&D Dice Roll Service",
     port=8080
@@ -40,8 +40,7 @@ def roll_dice(faces: int = 6, count: int = 1) -> dict:
         return {"error": error_msg}
     
     results = [random.randint(1, faces) for _ in range(count)]
-    
-    # Log the dice roll results
+
     logging.info(f"🎲 DICE ROLL: {count}d{faces} = {results}")
     
     return {
@@ -49,8 +48,7 @@ def roll_dice(faces: int = 6, count: int = 1) -> dict:
         "faces": faces
     }
 
-# Start the MCP server
+
 if __name__ == "__main__":
-    print("Starting D&D Dice Roll MCP Server...")
-    # TODO: run the MCP server
+    logger.info("Starting D&D Dice Roll MCP Server...")
     mcp.run(transport="streamable-http")
