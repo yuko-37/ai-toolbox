@@ -5,21 +5,22 @@ from strands.tools.mcp.mcp_client import MCPClient
 from mcp.client.streamable_http import streamable_http_client
 from strands_tools.a2a_client import A2AClientToolProvider
 from strands.models.anthropic import AnthropicModel
+from strands.models.ollama import OllamaModel
 from pydantic import BaseModel, Field
 from logging import getLogger, INFO
-from typing import List
+from typing import List, Optional
 
 
 logger = getLogger("GameMasterAgent")
 logger.setLevel(INFO)
 
-
+# IMPORTANT: Generate content in RUSSIAN and translate to RUSSIAN whenever needed.
 SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to specialized agents and tools.
 
 Available agents:
 - Rules Agent, for D&D mechanics and rules
 - Character Agent, for character creation and management
-- Image Agent, for generating character portraits and location scenes
+- Image Agent, for generating character portraits and location scenes only on user request
 
 To communicate with agents:
 1. Use a2a_list_discovered_agents to see available agents
@@ -36,6 +37,8 @@ Available D&D dice types:
 - d100 (percentile die) - Used for random tables, wild magic surges
 
 IMPORTANT: Always use the exact URLs shown by a2a_list_discovered_agents. Never invent or guess URLs.
+IMPORTANT: Generate images only on User direct request.
+IMPORTANT: Return ONLY valid JSON.
 
 Be creative, engaging, and use your available tools to enhance the D&D experience.
 """
@@ -49,10 +52,10 @@ class DiceOutput(BaseModel):
 
 class StoryOutput(BaseModel):
     """Model that contains information about a Person"""
-    response: str = Field(description="Your narative response as Game Master")
+    response: str = Field(description="Your narrative response as Game Master")
     actions_suggestions: list[str] = Field(description="['Action 1', 'Action 2', 'Action 3']")
-    destails: str = Field(description="Brief summary of tools/agents used")
-    dice_rolls: List[DiceOutput] = Field(default=[], description="List of dice rolls with dice_type, result, and reason")
+    details: str = Field(description="Brief summary of tools/agents used")
+    dice_rolls: Optional[List[DiceOutput]] = Field(default=[], description="List of dice rolls with dice_type, result, and reason")
 
 
 A2A_AGENT_URLS = [
@@ -69,8 +72,9 @@ def get_gamemaster_agent():
         mcp_client = MCPClient(lambda: streamable_http_client(MCP_SERVER_URL))
         a2a_client = A2AClientToolProvider(known_agent_urls=A2A_AGENT_URLS)
         model_id = os.getenv("ANTHROPIC_MODEL")
-        model = AnthropicModel(model_id=model_id, max_tokens=1000)
-        logger.info(f'Set GameMasterAgent model: {model_id}, {type(model)}')
+        # model = AnthropicModel(model_id=model_id, max_tokens=5000)
+        model = OllamaModel(model_id='qwen3.5', host="http://localhost:11434")
+        logger.info(f'Set GameMasterAgent model: {type(model)}')
 
         agent = Agent(
             model=model,

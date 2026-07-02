@@ -8,7 +8,16 @@ from tinydb import TinyDB, Query
 from dotenv import load_dotenv
 from logging_config import setup_logging
 from logging import getLogger, INFO
-from gamemaster_agent import get_gamemaster_agent
+from gamemaster_agent import get_gamemaster_agent, StoryOutput
+from strands.telemetry import StrandsTelemetry
+
+
+strands_telemetry = StrandsTelemetry()
+strands_telemetry.setup_otlp_exporter()     # Send traces to OTLP endpoint
+# strands_telemetry.setup_console_exporter()  # Print traces to console
+# strands_telemetry.setup_meter(
+    # enable_console_exporter=True)
+    # enable_otlp_exporter=True)
 
 
 load_dotenv()
@@ -54,16 +63,38 @@ def get_user(user_name):
     return character
 
 
+COUNTER = [1]
+
 @app.post("/inquire")
 async def ask_agent(request: QuestionRequest):
     logger.info("Processing request...")
     try:
-        response = await agent.invoke_async(request.question)
-        logger.info(response.structured_output)
+        # number = COUNTER[0]
+        # COUNTER[0] += 10
+        # with open(f"audit/req-audit-{number}.txt", 'w') as f:
+        #     str_req = str(request.question)
+        #     logger.info(f"req-audit-{number}.txt: {len(str_req)}")
+        #     f.write(str_req)
+
+        response = await agent.invoke_async(request.question,
+                                            limits={
+                                                "turns": 5,
+                                                "total_tokens": 5000
+                                            }) #, structured_output_model=StoryOutput)
+
+        # with open(f'audit/response-audit-{number}.txt', 'w') as f:
+        #     str_response = str(response)
+        #     logger.info(f"response-audit-{number}.txt: {len(str_response)}")
+        #     f.write(str_response)
+
+
+
+        # logger.info(response.structured_output)
         return JSONResponse(content={ "response": response.structured_output.model_dump()})
         
     except Exception as e:
         logger.error(f"Error occurred: {str(e)}")
+
         return JSONResponse(content={"error": "Internal server error"}, status_code=500)
 
 
