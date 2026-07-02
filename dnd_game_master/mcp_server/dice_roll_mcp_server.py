@@ -14,7 +14,8 @@ logger = logging.getLogger(LOGGER_NAME)
 
 mcp = FastMCP(
     name="D&D Dice Roll Service",
-    port=8080
+    port=8080,
+    log_level="WARNING",
 )
 
 
