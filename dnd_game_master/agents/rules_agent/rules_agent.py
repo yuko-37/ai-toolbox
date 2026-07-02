@@ -6,8 +6,13 @@ from strands.multiagent.a2a import A2AServer
 from dotenv import load_dotenv
 from strands.models.ollama import OllamaModel
 from strands.models.anthropic import AnthropicModel
-from logging_config import setup_logging, LOGGER_NAME
+from logging_config import setup_logging
 from logging import getLogger
+from strands.telemetry import StrandsTelemetry
+
+
+strands_telemetry = StrandsTelemetry()
+strands_telemetry.setup_otlp_exporter()
 
 
 load_dotenv()
