@@ -5,9 +5,8 @@ description = "A comprehensive workshop for mastering AI agent development with 
 requires-python = ">=3.10,<=3.13.5"
 dependencies = [
     # Strands AI Framework
-    "strands-agents>=1.20.0",
     "strands-agents-tools",
-    "strands-agents[a2a]",
+    "strands-agents[a2a,otel]>=1.20.0",
     # Web Framework for APIs
     "fastapi[standard]",
     "pydantic",
