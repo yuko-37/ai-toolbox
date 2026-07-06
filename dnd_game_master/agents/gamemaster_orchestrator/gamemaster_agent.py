@@ -1,6 +1,7 @@
 import os
 
 from strands import Agent
+from strands.handlers import null_callback_handler
 from strands.tools.mcp.mcp_client import MCPClient
 from mcp.client.streamable_http import streamable_http_client
 from strands_tools.a2a_client import A2AClientToolProvider
@@ -14,13 +15,12 @@ from typing import List, Optional
 logger = getLogger("GameMasterAgent")
 logger.setLevel(INFO)
 
-# IMPORTANT: Generate content in RUSSIAN and translate to RUSSIAN whenever needed.
+
 SYSTEM_PROMPT = """You are a D&D Game Master orchestrator with access to specialized agents and tools.
 
 Available agents:
-- Rules Agent, for D&D mechanics and rules
-- Character Agent, for character creation and management
-- Image Agent, for generating character portraits and location scenes only on user request
+- Use Rules Agent for D&D mechanics and rules
+- Use Character Agent for character creation and management
 
 To communicate with agents:
 1. Use a2a_list_discovered_agents to see available agents
@@ -37,8 +37,6 @@ Available D&D dice types:
 - d100 (percentile die) - Used for random tables, wild magic surges
 
 IMPORTANT: Always use the exact URLs shown by a2a_list_discovered_agents. Never invent or guess URLs.
-IMPORTANT: Generate images only on User direct request.
-IMPORTANT: Return ONLY valid JSON.
 
 Be creative, engaging, and use your available tools to enhance the D&D experience.
 """
@@ -61,7 +59,6 @@ class StoryOutput(BaseModel):
 A2A_AGENT_URLS = [
     "http://localhost:8000",
     "http://localhost:8001",
-    "http://localhost:8002",
 ]
 
 MCP_SERVER_URL = "http://localhost:8080/mcp"
@@ -71,9 +68,7 @@ def get_gamemaster_agent():
     try:
         mcp_client = MCPClient(lambda: streamable_http_client(MCP_SERVER_URL))
         a2a_client = A2AClientToolProvider(known_agent_urls=A2A_AGENT_URLS)
-        model_id = os.getenv("ANTHROPIC_MODEL")
-        # model = AnthropicModel(model_id=model_id, max_tokens=5000)
-        model = OllamaModel(model_id='qwen3.5', host="http://localhost:11434")
+        model = OllamaModel(model_id='qwen3.5', host="http://localhost:11434", additional_args={"think": "low"})
         logger.info(f'Set GameMasterAgent model: {type(model)}')
 
         agent = Agent(

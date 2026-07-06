@@ -63,34 +63,23 @@ def get_user(user_name):
     return character
 
 
-COUNTER = [1]
 
 @app.post("/inquire")
 async def ask_agent(request: QuestionRequest):
     logger.info("Processing request...")
     try:
-        # number = COUNTER[0]
-        # COUNTER[0] += 10
-        # with open(f"audit/req-audit-{number}.txt", 'w') as f:
-        #     str_req = str(request.question)
-        #     logger.info(f"req-audit-{number}.txt: {len(str_req)}")
-        #     f.write(str_req)
+
 
         response = await agent.invoke_async(request.question,
                                             limits={
                                                 "turns": 5,
                                                 "total_tokens": 5000
-                                            }) #, structured_output_model=StoryOutput)
+                                            }, structured_output_model=StoryOutput)
 
-        # with open(f'audit/response-audit-{number}.txt', 'w') as f:
-        #     str_response = str(response)
-        #     logger.info(f"response-audit-{number}.txt: {len(str_response)}")
-        #     f.write(str_response)
+        logger.info(f"RESPONSE: {str(response)}")
+        result = JSONResponse(content={ "response": response.structured_output.model_dump()})
 
-
-
-        # logger.info(response.structured_output)
-        return JSONResponse(content={ "response": response.structured_output.model_dump()})
+        return result
         
     except Exception as e:
         logger.error(f"Error occurred: {str(e)}")
@@ -100,4 +89,4 @@ async def ask_agent(request: QuestionRequest):
 
 if __name__ == "__main__":
     logger.info("Starting GameMasterOrchestrator...")
-    uvicorn.run(app, port=8009)
+    uvicorn.run(app, port=8009, log_level='debug')

@@ -30,3 +30,4 @@ LOGGING_CONFIG = {
 def setup_logging():
     logging.config.dictConfig(LOGGING_CONFIG)
     logging.getLogger("strands").setLevel(logging.DEBUG)
+    logging.getLogger("strands_tools").setLevel(logging.DEBUG)
