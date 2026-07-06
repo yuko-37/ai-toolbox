@@ -111,34 +111,6 @@
                 }
             ],
             "created_at": "2025-09-11T17:00:37.777466"
-        },
-        "5": {
-            "character_id": "8dfc6269-485c-45ce-92cb-598678098507",
-            "name": "Yuko",
-            "character_class": "Bard",
-            "race": "Half-Elf",
-            "gender": "Female",
-            "level": 1,
-            "experience": 0,
-            "stats": {
-                "strength": 10,
-                "dexterity": 10,
-                "constitution": 10,
-                "intelligence": 10,
-                "wisdom": 10,
-                "charisma": 10
-            },
-            "inventory": [
-                {
-                    "item_name": "Starting Equipment Pack",
-                    "quantity": 1
-                },
-                {
-                    "item_name": "Gold Pieces",
-                    "quantity": 100
-                }
-            ],
-            "created_at": "2026-06-21T17:33:10.200958"
         }
     }
 }

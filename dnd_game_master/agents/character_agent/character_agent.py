@@ -1,22 +1,28 @@
-import os
 import uuid
 import logging
 
 from datetime import datetime
 from dataclasses import dataclass, asdict
-from typing import List, Dict
+from typing import List, Dict, Optional
+from mcp.client.streamable_http import streamable_http_client
 from strands import Agent, tool
 from strands.multiagent.a2a import A2AServer
+from strands.tools.mcp.mcp_client import MCPClient
 from tinydb import TinyDB, Query
 from strands.models.ollama import OllamaModel
-from strands.models.anthropic import AnthropicModel
 from dotenv import load_dotenv
 from logging_config import setup_logging
+from strands.telemetry import StrandsTelemetry
+from random import randint
 
+
+strands_telemetry = StrandsTelemetry()
+strands_telemetry.setup_otlp_exporter()
 
 load_dotenv()
 setup_logging()
 logger = logging.getLogger('CharacterA2AServer')
+logging.getLogger("strands").setLevel(logging.DEBUG)
 
 
 @dataclass
@@ -93,18 +99,47 @@ def list_all_characters() -> str:
     return all_chars
 
 
-@tool
+def generate():
+    values = [randint(1, 6) for _ in range(4)]
+    result = sum(values) - min(values)
+    return result
+
+
+@tool(inputSchema={
+    "json": {
+        "type": "object",
+        'properties': {
+            'name': {'description': "Character's name", 'type': 'string'},
+            'character_class': {'description': 'D&D class (Fighter, Wizard, etc.)', 'type': 'string'},
+            'race': {'description': 'D&D race (Human, Elf, etc.)', 'type': 'string'},
+            'gender': {'description': "Character's gender", 'type': 'string'},
+            'stats_dict': {
+                "type": "object",
+                "description": 'Dictionary with abilities. If not provided, do not pass stats_dict',
+                "properties": {
+                    "strength": { "type": "integer" },
+                    "dexterity": { "type": "integer" },
+                    "constitution": { "type": "integer" },
+                    "intelligence": { "type": "integer" },
+                    "wisdom": { "type": "integer" },
+                    "charisma": { "type": "integer" }
+                },
+                "required": ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+            }
+        },
+
+    'required': ['name', 'character_class', 'race', 'gender']
+    }
+})
 def create_character(
     name: str,
     character_class: str,
     race: str,
     gender: str,
-    stats_dict: Dict[str, int]
+    stats_dict: Optional[Dict[str, int]] = None
     ) -> str:
     """
     Character details respecting the GameCharacters object fields.
-    Roll a dice to generate the stats_dic (ability scores). 
-    When rolling ability scores, remember the traditional method: roll 4d6, drop the lowest die.
     
     Args:
         name: Character's name
@@ -112,22 +147,28 @@ def create_character(
         race: D&D race (Human, Elf, etc.)
         gender: Character's gender
         stats_dict: Dictionary with strength, dexterity, constitution, intelligence, wisdom, charisma
+
+    Example:
+        {'name': 'character_name',
+         'character_class': 'Bard',
+         'race': 'Human',
+         'gender': 'Male',
+         'stats_dict': {"strength": 14, "dexterity": 18, "constitution": 21, "intelligence": 5, "wisdom": 8, "charisma": 13}
+        }
     """
-    # Generate unique character ID
+
     character_id = str(uuid.uuid4())
-    print(character_id)
-    # Create stats object
+    if stats_dict is None:
+        stats_dict = {}
     stats = Stats(
-        strength=stats_dict.get('strength', 10),
-        dexterity=stats_dict.get('dexterity', 10),
-        constitution=stats_dict.get('constitution', 10),
-        intelligence=stats_dict.get('intelligence', 10),
-        wisdom=stats_dict.get('wisdom', 10),
-        charisma=stats_dict.get('charisma', 10)
+        strength=stats_dict.get('strength', generate()),
+        dexterity=stats_dict.get('dexterity', generate()),
+        constitution=stats_dict.get('constitution', generate()),
+        intelligence=stats_dict.get('intelligence', generate()),
+        wisdom=stats_dict.get('wisdom', generate()),
+        charisma=stats_dict.get('charisma', generate()),
     )
 
-    print(stats)
-    # Create character with updated CurrentStatus
     character = Character(
         character_id=character_id,
         name=name,
@@ -142,43 +183,39 @@ def create_character(
             InventoryItem("Gold Pieces", 100)
         ]
     )
-    print(character)
-    
-    characters_db.insert(asdict(character))
-    print("Inserted")
+
+    logger.info("CHARACTER SUCCESSFULLY CREATED")
+    # characters_db.insert(asdict(character))
     return character
 
 
 DESCRIPTION="""
 Specialized D&D character management agent that handles character creation, storage, and retrieval. 
-Creates new characters with proper ability score generation (4d6 drop lowest), manages character data in persistent storage, 
-and provides character lookup services. Maintains complete character profiles including stats, inventory, and progression data for D&D campaigns.
+Creates new characters, manages character data in persistent storage, 
+and provides character lookup services.
 """
 
 SYSTEM_PROMPT="""
-You are a D&D character management specialist. When creating characters, always roll ability scores using the traditional 
-method: roll 4d6 and drop the lowest die for each of the six abilities (Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma). 
-Use the appropriate tools to create, find, or list characters as requested. Provide clear confirmations when characters are created and 
-helpful summaries when characters are found. Keep responses focused and include relevant character details like class, race, and key stats."
+You are a D&D character management specialist. 
+Use the appropriate tools to create, find, or list characters as requested. Provide clear confirmations 
+when characters are created and helpful summaries when characters are found. Keep responses focused and include 
+relevant character details like class, race, and key stats."
 """
 
-if os.getenv('CHARACTER_AGENT_MODEL', '') == 'LLAMA':
-    model = OllamaModel(host="http://localhost:11434", model_id="llama3.2")
-else:
-    model = AnthropicModel(model_id="claude-haiku-4-5-20251001", max_tokens=1000)
 
-logger.info(f'Set Character model to {type(model)}')
+model = OllamaModel(host="http://localhost:11434", model_id="qwen3.5",
+                        additional_args={"think": True})
 
 agent = Agent(
     model=model,
     tools = [find_character_by_name, list_all_characters, create_character],
     name = "Character Creator Agent",
     description= DESCRIPTION,
-    system_prompt= SYSTEM_PROMPT
+    system_prompt= SYSTEM_PROMPT,
 )
 
 
-a2a_server = A2AServer(agent=agent, port=8001)
+a2a_server = A2AServer(agent=agent, port=8001, enable_a2a_compliant_streaming=False)
 
 
 if __name__ == "__main__":

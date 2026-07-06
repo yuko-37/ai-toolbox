@@ -22,7 +22,7 @@ LOGGING_CONFIG = {
 
     "root": {
         "handlers": ["stream"],
-        "level": "INFO",
+        "level": "DEBUG",
     }
 }
 
