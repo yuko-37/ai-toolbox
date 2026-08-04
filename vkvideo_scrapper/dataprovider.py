@@ -8,11 +8,11 @@ logger = logging.getLogger(__name__)
 _VK_AUTH_ERROR_CODE = 5  # "User authorization failed"
 
 
-def get_titles(owner_id, album_id, limit=3):
+def get_titles(owner_id, album_id, sort, limit=3):
     api_url = "https://api.vkvideo.ru/method/video.getFromAlbum"
 
     params = {
-        "v": "5.275",
+        "v": "5.282",
         "client_id": "52461373"
     }
 
@@ -27,7 +27,7 @@ def get_titles(owner_id, album_id, limit=3):
             "extended": 1,
             "offset": 0,
             "owner_id": owner_id,
-            "sort_album": 0,
+            "sort_album": sort,
             "access_token": token
         }
 

@@ -18,7 +18,7 @@ def write_last_shows_to_memory():
     raw_data = {}
     for name, ids in show_album.items():
         try:
-            raw_data[name] = get_titles(ids["owner_id"], ids["album_id"])
+            raw_data[name] = get_titles(ids["owner_id"], ids["album_id"], ids["sort"])
         except Exception as e:
             logger.error("Failed to fetch show '%s': %s", name, e)
 
