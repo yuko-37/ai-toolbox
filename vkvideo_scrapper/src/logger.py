@@ -1,5 +1,11 @@
 import logging
 import logging.handlers
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+LOG_FILE = PROJECT_ROOT / "log" / "vkvideo.log"
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
 def configure_logging(level: int = logging.INFO) -> None:
@@ -14,7 +20,7 @@ def configure_logging(level: int = logging.INFO) -> None:
     root.setLevel(level)
 
     file_handler = logging.handlers.RotatingFileHandler(
-        "vkvideo.log",
+        LOG_FILE,
         maxBytes=100 * 1024,  # 100 KB
         backupCount=3,
         encoding="utf-8",
